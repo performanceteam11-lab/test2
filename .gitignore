@@ -1,0 +1,36 @@
+# API 키 (절대 올리지 않음)
+config.py
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# 결과 파일 (대시보드에 이미 embed됨)
+results/
+
+# 디버그 임시 파일
+debug_*.html
+debug_*.txt
+udc_*.html
+step1_result_*.html
+test_combined_result.json
+
+# 임시 스크립트
+check_ranks.py
+check_dashboard.py
+debug_page.py
+find_selector.py
+test_*.py
+analyze_*.py
+debug_selectors.py
+step*.py
+
+# Excel 임시 잠금 파일
+~$*.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
