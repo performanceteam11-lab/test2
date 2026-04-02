@@ -104,6 +104,8 @@
       font-size: 12px; cursor: pointer; transition: all .15s;
     }
     .filter-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(88,166,255,.08); }
+    .search-btn { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; padding: 7px 18px; }
+    .search-btn:hover { background: #4a9ee0; }
 
     /* ── 메인 테이블 ── */
     .table-wrap {
@@ -260,6 +262,30 @@
 </header>
 
 <main>
+  <!-- 검색바: render()와 무관하게 고정 (재생성 안됨) -->
+  <div id="filter-bar-wrap" style="display:none">
+    <div class="section-title" style="margin-bottom:14px">
+      <span class="dot" style="background:var(--blue)"></span>
+      노출 순위 테이블
+    </div>
+    <div class="filter-bar">
+      <input id="kw-search"      type="text" placeholder="키워드 검색…"  onkeydown="if(event.key==='Enter')doSearch()" />
+      <input id="product-search" type="text" placeholder="상품명 검색…"  onkeydown="if(event.key==='Enter')doSearch()" />
+      <button class="filter-btn search-btn" onclick="doSearch()">🔍 검색</button>
+      <button class="filter-btn" data-group="section" data-val="all"      onclick="setActive('section','all')">전체</button>
+      <button class="filter-btn" data-group="section" data-val="shopping" onclick="setActive('section','shopping')">가격비교</button>
+      <button class="filter-btn" data-group="section" data-val="nstore"   onclick="setActive('section','nstore')">N플러스</button>
+      <button class="filter-btn" data-group="section" data-val="organic"  onclick="setActive('section','organic')">오가닉</button>
+      &nbsp;
+      <button class="filter-btn" data-group="plat" data-val="all" onclick="setActive('plat','all')">전체</button>
+      <button class="filter-btn" data-group="plat" data-val="PC"  onclick="setActive('plat','PC')">PC</button>
+      <button class="filter-btn" data-group="plat" data-val="MO"  onclick="setActive('plat','MO')">MO</button>
+      &nbsp;
+      <button class="filter-btn" data-group="ad" data-val="all"     onclick="setActive('ad','all')">전체</button>
+      <button class="filter-btn" data-group="ad" data-val="ad"      onclick="setActive('ad','ad')">광고</button>
+      <button class="filter-btn" data-group="ad" data-val="organic" onclick="setActive('ad','organic')">오가닉</button>
+    </div>
+  </div>
   <div id="app"></div>
 </main>
 
@@ -506,6 +532,7 @@ function render() {
   const { results, summary, keywords, timestamp } = MONITOR_DATA;
 
   document.getElementById('ts').textContent = timestamp || '데이터 없음';
+  document.getElementById('filter-bar-wrap').style.display = '';
 
   const filtered = filterRows(results);
 
@@ -516,72 +543,29 @@ function render() {
     btn.classList.toggle('active', cur === v);
   });
 
-  const app = document.getElementById('app');
   const kwsToShow = selectedKw
     ? [selectedKw]
     : keywords.filter(kw => !searchKw || fuzzyMatch(kw, searchKw));
 
-  app.innerHTML = `
+  document.getElementById('app').innerHTML = `
     ${buildStats(results, keywords)}
-
-    <div class="section-title">
-      <span class="dot" style="background:var(--blue)"></span>
-      노출 순위 테이블
-    </div>
-
-    <div class="filter-bar">
-      <input id="kw-search"      type="text" placeholder="키워드 검색…" value="${searchKw}"      oninput="onSearchKw(this.value,event)"      oncompositionend="onSearchKw(this.value,event)" />
-      <input id="product-search" type="text" placeholder="상품명 검색…" value="${searchProduct}" oninput="onSearchProduct(this.value,event)" oncompositionend="onSearchProduct(this.value,event)" />
-      <button class="filter-btn" data-group="section" data-val="all"      onclick="setActive('section','all')">전체</button>
-      <button class="filter-btn" data-group="section" data-val="shopping" onclick="setActive('section','shopping')">가격비교</button>
-      <button class="filter-btn" data-group="section" data-val="nstore"   onclick="setActive('section','nstore')">N플러스</button>
-      <button class="filter-btn" data-group="section" data-val="organic"  onclick="setActive('section','organic')">오가닉</button>
-      &nbsp;
-      <button class="filter-btn" data-group="plat" data-val="all" onclick="setActive('plat','all')">전체</button>
-      <button class="filter-btn" data-group="plat" data-val="PC"  onclick="setActive('plat','PC')">PC</button>
-      <button class="filter-btn" data-group="plat" data-val="MO"  onclick="setActive('plat','MO')">MO</button>
-      &nbsp;
-      <button class="filter-btn" data-group="ad" data-val="all"     onclick="setActive('ad','all')">전체</button>
-      <button class="filter-btn" data-group="ad" data-val="ad"      onclick="setActive('ad','ad')">광고</button>
-      <button class="filter-btn" data-group="ad" data-val="organic" onclick="setActive('ad','organic')">오가닉</button>
-    </div>
 
     ${buildTable(filtered)}
 
     <div class="section-title" style="margin-top:8px">
       <span class="dot" style="background:var(--purple)"></span>
       키워드별 노출 현황
-      ${selectedKw ? `<span style="font-size:12px;color:var(--muted);font-weight:400">&nbsp;· 클릭한 키워드: <strong style="color:var(--blue)">${selectedKw}</strong> (다시 클릭하면 전체)</span>` : `<span style="font-size:12px;color:var(--muted);font-weight:400">&nbsp;· 키워드 행을 클릭하면 해당 카드만 표시</span>`}
+      ${selectedKw
+        ? `<span style="font-size:12px;color:var(--muted);font-weight:400">&nbsp;· 클릭한 키워드: <strong style="color:var(--blue)">${selectedKw}</strong> (다시 클릭하면 전체)</span>`
+        : `<span style="font-size:12px;color:var(--muted);font-weight:400">&nbsp;· 키워드 행을 클릭하면 해당 카드만 표시</span>`}
     </div>
-
     <div class="kw-grid">${buildCards(summary, kwsToShow)}</div>
   `;
-
-  // 필터 버튼 재적용
-  document.querySelectorAll('.filter-btn[data-group]').forEach(btn => {
-    const g = btn.dataset.group, v = btn.dataset.val;
-    const cur = g === 'section' ? activeSection : g === 'plat' ? activePlat : activeAd;
-    btn.classList.toggle('active', cur === v);
-  });
-
-  // 검색 input 포커스 복원 (render 후 DOM 재생성으로 포커스 잃는 것 방지)
-  if (document._focusedId) {
-    const el = document.getElementById(document._focusedId);
-    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
-    document._focusedId = null;
-  }
 }
 
-function onSearchKw(val, e) {
-  if (e && e.isComposing) return;
-  searchKw = val.trim();
-  document._focusedId = 'kw-search';
-  render();
-}
-function onSearchProduct(val, e) {
-  if (e && e.isComposing) return;
-  searchProduct = val.trim();
-  document._focusedId = 'product-search';
+function doSearch() {
+  searchKw      = (document.getElementById('kw-search').value      || '').trim();
+  searchProduct = (document.getElementById('product-search').value || '').trim();
   render();
 }
 
